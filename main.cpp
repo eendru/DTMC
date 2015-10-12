@@ -4,8 +4,9 @@
 
 int main() {
   
-  std::cout << "Here am i" << std::endl;
-  MarkovChain a;
-  a.Read();
+  MarkovChain a("input2.txt");
+  a.read();
+  a.buildTable();
+  a.generate();
   return 0;
 }
