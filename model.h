@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <locale>
 #include <iterator>
+#include <iomanip>
 
 using std::string;
 using std::vector;
@@ -28,6 +29,7 @@ public:
   void fit();
 
   void buildTable();
+  void printTable();
   void generate();
 
   std::string getNextWord( std::map<std::string, int>&);

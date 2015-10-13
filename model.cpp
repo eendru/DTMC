@@ -38,11 +38,13 @@ void MarkovChain::read() {
     if (!result.empty()) {
       data.push_back(result);    
       word_frequency[result] ++;  // also count freq
+     
     }
-    
-    result.clear();
 
+    result.clear();
   }
+
+
   
 }
 
@@ -52,45 +54,76 @@ MarkovChain::~MarkovChain() {
 }
 
 
+void MarkovChain::printTable() {
+  std::map< std::pair<std::string, std::string>, 
+            std::map<std::string, int> >  :: iterator itb = two_order_chain.begin(),
+                                                      ite = two_order_chain.end();
+  std::map<std::string, int>::iterator itmb, itme;
+
+  for (; itb != ite; ++itb) {
+    std::cout << "[" << itb->first.first << ", " << itb->first.second << "] = {";
+    for(itmb = itb->second.begin(), itme = itb->second.end(); itmb != itme; ++itmb) {
+      std::cout  << itmb->first << "=" << itmb->second << ", ";
+    }
+    std::cout << "}" << std::endl;
+  }
+
+
+}
+
 void MarkovChain::fit() {
   
 }
 
 
 void MarkovChain::buildTable() { 
-
-  // now only two-order chain
-  // 
+// now only two-order chain
   
   uint32_t i = 0, j = 0;
-  std::string tmp1 = "", tmp2 = "";
-  std::list<std::string> fill;
   std::map<std::string, int> tmap;
+  
+  tmap[data.at(0)] = 1;
+  std::string tmp1 = "", tmp2 = "";
+  two_order_chain[std::make_pair(tmp1, tmp2)] = tmap;  // the first map entry will have 
+                                                       // a list of n empty strings 
+                                                       // mapped to the first word 
+                                                       // in the training sequence.
 
+  tmap.clear();
 
-  for (i = 0; i < data.size()-1; ++i) {
-    tmp1 = data.at(i);
-    tmp2 = data.at(i+1);
+  tmp2 = data.at(0);
+  tmp1 = "";
+  
+  tmap[data.at(1)] = 1;
+  two_order_chain[std::make_pair(tmp1, tmp2)] = tmap; // second element
+                                                      // non-full
+                                                      // like "", "__"
+  tmap.clear();
 
-    for (j = 0; j < data.size()-2; ++j) {
+  std::map<std::string, int>::iterator itb, ite;
+  for (i = 1; i < data.size(); ++i) {
+    tmp1 = tmp2; 
+    tmp2 = data.at(i);
+    
+
+    for (j = 0; j < data.size()-1; ++j) {
       if ((data.at(j) == tmp1) && (data.at(j+1) == tmp2)) {
-        tmap[data.at(j+2)]++;
+        if ( j + 2 < data.size() ){
+
+          tmap[data.at(j+2)]++;
+        }
+        else
+          tmap[""]++;
       }  
     }
 
-    std::map<std::string, int>::iterator itb = tmap.begin(), ite = tmap.end();
-    for (; itb != ite; ++itb){ 
-      if (itb->second == 0){
-
-        std::cout << "ololo " << itb -> first << " " << itb -> second  << std::endl;
-      }
-    }
-
-    two_order_chain[std::make_pair(tmp1, tmp2)] = tmap;
+    if(!two_order_chain.count(std::make_pair(tmp1, tmp2)))  // check, if we already count
+      two_order_chain[std::make_pair(tmp1, tmp2)] = tmap;
     tmap.clear();
   }
 
-    
+
+
 }
 
 
@@ -98,38 +131,57 @@ void MarkovChain::generate() {
   std::map< std::pair<std::string, std::string>, 
             std::map<std::string, int> > ::iterator itb = two_order_chain.begin(), 
                                                     ite = two_order_chain.end();
+  
+  //std::cout << std::endl<< std::endl;
+  ///printTable();
+  
 
 
-  std::string start_word1 = data.at(1);
-  std::string start_word2 = data.at(2);
+  std::string start_word1 = "";
+  std::string start_word2 = "";
 
   std::map<std::string, int> tmap;
+  std::map<std::string, int>::iterator itbt = tmap.begin(), itet = tmap.end();
 
-  for(; itb != ite; ++itb) {
+  //ite--; ite--;
+  do {
+  //for(uint32_t h = 0; h < 100; ++h){
     tmap = two_order_chain[std::make_pair(start_word1, start_word2)];
-    //std::cout << tmap.begin()->first;
-    getNextWord(tmap);
-  }
+    
+    start_word1 = start_word2;
+    start_word2 = getNextWord(tmap);
+    std::cout <<  start_word2 << " ";
 
+    //for (itbt = tmap.begin(), itet = tmap.end(); itbt != itet; ++itbt)
+    //  std::cout << itbt->first << "=" << itbt->second << " ";
+    
+  } while(!start_word2.empty());
+
+  std::cout << std::endl;
 }
 
 
+std::string MarkovChain::getNextWord( std::map<std::string, int>& bag) {
 
-std::string MarkovChain::getNextWord(std::map<std::string, int>& bag) {
-  
-  int sum = 0;
-  std::string s;
-  std::list <int> values;
-  for (std::map<std::string, int>::iterator itb = bag.begin(), ite = bag.end(); itb != ite; ++itb ){
+  int sum = 0;  // sum all elements in map
+  for (std::map<std::string, int>::iterator itb = bag.begin(), ite = bag.end(); itb != ite; ++itb )
     sum += itb->second;
-    values.push_back(itb->second);
-  }
 
+  std::map <std::string, double> normalize_values; // normalized elements 
+  for (std::map<std::string, int>::iterator itb = bag.begin(), ite = bag.end(); itb != ite; ++itb )
+    normalize_values[itb->first] = (itb->second)/double(sum);
   
+
   std::uniform_real_distribution<double> distribution(0, 1);
-  for (std::list<int>::iterator itb = values.begin(), ite = values.end(); itb != ite; ++itb ){
-    *itb = (*itb)/sum; // normalize list
-  }
+  double random_value = distribution(generator); // random value from 0, 1 with uniform dist
+  std::map<std::string, double>::iterator itbm = normalize_values.begin();
 
+  do{
+    random_value -= itbm->second;
+    if(random_value > 0.0)
+      ++itbm;     // What's about out of range?
+  } while (random_value > 0.0);
+   
 
+  return itbm->first;
 }
