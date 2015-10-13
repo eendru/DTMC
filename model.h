@@ -10,6 +10,7 @@
 #include <locale>
 #include <iterator>
 #include <iomanip>
+#include <array>
 
 using std::string;
 using std::vector;
@@ -23,7 +24,6 @@ public:
   ~MarkovChain();
 
   void setOrder(uint32_t exorder);
-
 
   void read();
   void fit();

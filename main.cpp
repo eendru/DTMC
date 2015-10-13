@@ -4,9 +4,14 @@
 
 int main() {
   
-  MarkovChain a("input.txt");
+  MarkovChain a("input2.txt", 2);
+
   a.read();
-  a.buildTable();
-  a.generate();
+  a.fit();
+  a.printTable();
+  //a.generate();
   return 0;
 }
+
+
+//  add size type

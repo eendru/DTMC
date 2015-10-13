@@ -44,13 +44,27 @@ MarkovChain::~MarkovChain() {
 
 
 void MarkovChain::printTable() {
-  std::map< std::pair<std::string, std::string>,
-            std::map<std::string, int> >  :: iterator itb = two_order_chain.begin(),
-                                                      ite = two_order_chain.end();
+  std::map<std::list<std::string>, std::map<std::string, int> >::iterator itb, ite;
+
+  itb = norder_chain.begin();
+  ite = norder_chain.end(); 
+
   std::map<std::string, int>::iterator itmb, itme;
+  std::list<std::string>::iterator itlb, itle;
+  std::list<std::string> tmp;
 
   for (; itb != ite; ++itb) {
-    std::cout << "[" << itb->first.first << ", " << itb->first.second << "] = {";
+    tmp = itb->first;
+    itlb = tmp.begin();
+    itle = tmp.end();
+    
+    std::cout << "[";
+    for (; itlb != itle; ++itlb) {
+      std::cout << *itlb << ", ";
+    }
+
+    std::cout << "] = {";
+    
     for (itmb = itb->second.begin(), itme = itb->second.end(); itmb != itme; ++itmb) {
       std::cout  << itmb->first << "=" << itmb->second << ", ";
     }
@@ -59,6 +73,48 @@ void MarkovChain::printTable() {
 }
 
 void MarkovChain::fit() {
+  // fill first elemts in markov chain
+  std::list<std::string> last_n_strings;
+  std::list<std::string> data_strings;
+
+  last_n_strings.resize(order, "");         // list of empty strings (?)
+  std::map<std::string, int> chain_key;
+  chain_key[data.at(0)] = 1;
+
+  norder_chain[last_n_strings] = chain_key;
+  chain_key.clear();
+
+  uint64_t i = 0, j = 0, k = 9;
+  std::list<std::string>::iterator itlb, itlcurrent;
+  std::vector<std::string>::iterator itc, itvcurrent, itvdcurrent;
+  for (i = 0; i < data.size(); ++i) {
+    
+    itlb = last_n_strings.begin();
+    ++itlb;
+    last_n_strings.splice(itlb, last_n_strings, last_n_strings.end());    // here
+                                                                          // try to implement
+                                                                          // something like
+                                                                          // sliding window
+                                                                          // with length = order
+                                                                          // 
+    *(last_n_strings.rbegin()) = data.at(i);
+    // under try to find n elements and count words 
+    for (itc = data.begin(); itc != data.end() - order -1; ++itc){
+      itvcurrent = itc;
+      for (k = 0; k < order; ++itvcurrent, ++k )
+        data_strings.push_back(*itvcurrent);
+      
+      if(std::equal(data_strings.begin(), data_strings.end(), last_n_strings.begin()))
+        chain_key[*(++itvcurrent)]++;
+      data_strings.clear();
+    } 
+
+    if(!norder_chain.count(last_n_strings))
+      norder_chain[last_n_strings] = chain_key;
+
+    chain_key.clear();
+  }
+
 }
 
 
