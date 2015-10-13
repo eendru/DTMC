@@ -49,8 +49,3 @@ private:
   
   std::default_random_engine generator; // for uniform distribution
 };
-
-
-
-//
-//Get next word with according to the distribution of objects in map
