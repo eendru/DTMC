@@ -4,7 +4,7 @@
 
 int main() {
   
-  MarkovChain a("input2.txt");
+  MarkovChain a("input.txt");
   a.read();
   a.buildTable();
   a.generate();
