@@ -8,8 +8,17 @@ int main() {
 
   a.read();
   a.fit();
-  a.printTable();
-  //a.generate();
+  //a.printTable();
+  a.predict();
+  
+  MarkovChain b("input2.txt", 12);
+
+
+  b.read();
+  b.fit();
+  //.printTable();
+  b.predict();
+
   return 0;
 }
 

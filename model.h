@@ -27,8 +27,8 @@ public:
 
   void read();
   void fit();
+  void predict();
 
-  void buildTable();
   void printTable();
   void generate();
 
@@ -49,3 +49,6 @@ private:
   
   std::default_random_engine generator; // for uniform distribution
 };
+
+
+void printList(std::list<std::string> &l);
