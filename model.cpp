@@ -16,7 +16,6 @@ void MarkovChain::read() {
   std::copy(std::istream_iterator<std::string>(readFile), {}, back_inserter(data2));
 
   // post processing
-
   std::string result;
   for (uint32_t i = 0; i < data2.size(); ++i) {
     // punctuation mark can be without space after   << FIXME
@@ -29,6 +28,7 @@ void MarkovChain::read() {
                       data2.at(i).end() );
 
     result = data2.at(i);
+    // convert to lower case
     std::transform(result.begin(), result.end(), result.begin(), ::tolower);  // it's not working with russian symbols
     if (!result.empty()) {
       data.push_back(result);
@@ -59,55 +59,82 @@ void MarkovChain::printTable() {
     itle = tmp.end();
     
     std::cout << "[";
-    for (; itlb != itle; ++itlb) {
+    for (; itlb != itle; ++itlb) 
       std::cout << *itlb << ", ";
-    }
-
-    std::cout << "] = {";
     
-    for (itmb = itb->second.begin(), itme = itb->second.end(); itmb != itme; ++itmb) {
-      std::cout  << itmb->first << "=" << itmb->second << ", ";
-    }
+    std::cout << "] = {";
+
+    for (itmb = itb->second.begin(), itme = itb->second.end(); itmb != itme; ++itmb) 
+      std::cout  <<"\"" << itmb->first <<"\"" << "=" << itmb->second << ", ";
+    
     std::cout << "}" << std::endl;
   }
 }
 
 void MarkovChain::fit() {
-  // fill first elemts in markov chain
+  
   std::list<std::string> last_n_strings;
   std::list<std::string> data_strings;
 
+  //  fill first element in norder_chain
   last_n_strings.resize(order, "");         // list of empty strings (?)
   std::map<std::string, int> chain_key;
   chain_key[data.at(0)] = 1;
-
   norder_chain[last_n_strings] = chain_key;
-  chain_key.clear();
 
-  uint64_t i = 0, j = 0, k = 9;
-  std::list<std::string>::iterator itlb, itlcurrent;
-  std::vector<std::string>::iterator itc, itvcurrent, itvdcurrent;
+  chain_key.clear();
+  uint64_t i = 0, j = 0, k = 0;
+
+
+  
+  std::list<std::string>::iterator itlb;
+  std::vector<std::string>::iterator itc, itvcurrent;
+
   for (i = 0; i < data.size(); ++i) {
     
-    itlb = last_n_strings.begin();
-    ++itlb;
-    last_n_strings.splice(itlb, last_n_strings, last_n_strings.end());    // here
-                                                                          // try to implement
-                                                                          // something like
-                                                                          // sliding window
-                                                                          // with length = order
-                                                                          // 
-    *(last_n_strings.rbegin()) = data.at(i);
-    // under try to find n elements and count words 
-    for (itc = data.begin(); itc != data.end() - order -1; ++itc){
-      itvcurrent = itc;
-      for (k = 0; k < order; ++itvcurrent, ++k )
-        data_strings.push_back(*itvcurrent);
-      
-      if(std::equal(data_strings.begin(), data_strings.end(), last_n_strings.begin()))
-        chain_key[*(++itvcurrent)]++;
-      data_strings.clear();
-    } 
+    itlb = last_n_strings.begin();       // left circle-shift for last_n_strings list
+    ++itlb;                              
+    last_n_strings.splice(itlb, last_n_strings, last_n_strings.end());
+    
+    *(last_n_strings.rbegin()) = data.at(i); // last element must be update
+
+    if (i < order-1)
+      chain_key[data.at(i+1)] = 1; // if it's first n=order elements
+                                   //
+
+    else {
+    // under fill a tmp-list of words from data-vector, size of list = order
+    // after that, compare this list and last_n_words list
+    // if they are equal value of word in chain_map
+    // must be increment, id of this word - next from lat element in tmp-list
+    // 
+    // for example: last_n_strings = [another, sentence], order=2
+    // data vector = [this, is, another, sentence, this, is, another, sentence]
+    // current_position = data_vector.begin(), tmp-list=[this, is]
+    // as result in norder_chain for [another, sentence]
+    // tmp-list and last_n_string are not equal
+    // 
+    // After two iterations tmp-list would be [another, sentence]
+    // tmp_list and last_n_strings are equal. => chain_key["this"]++
+    // "this" is a next word in data-vector after "sentence"
+
+      for (itc = data.begin(); itc != data.end() - order + 1; ++itc) {
+        itvcurrent = itc;  // from current position get n=order-elements
+        for (k = 0; k < order; ++itvcurrent, ++k )
+          data_strings.push_back(*itvcurrent);
+        
+        if(std::equal(data_strings.begin(), data_strings.end(), last_n_strings.begin()))
+          // if it's not last occurence
+          // else, need map empty string ""
+          // FIXME
+          if (std::distance(itc, data.end() - order) > 0)
+            chain_key[*(itvcurrent)]++;
+          else
+            chain_key[""]++;
+
+        data_strings.clear();
+      }
+    }
 
     if(!norder_chain.count(last_n_strings))
       norder_chain[last_n_strings] = chain_key;
@@ -117,54 +144,7 @@ void MarkovChain::fit() {
 
 }
 
-
-void MarkovChain::buildTable() {
-// now only two-order chain
-
-  uint32_t i = 0, j = 0;
-  std::map<std::string, int> tmap;
-
-  tmap[data.at(0)] = 1;
-  std::string tmp1 = "", tmp2 = "";
-  two_order_chain[std::make_pair(tmp1, tmp2)] = tmap;  // the first map entry will have
-                                                       // a list of n empty strings
-                                                       // mapped to the first word
-                                                       // in the training sequence.
-
-  tmap.clear();
-
-  tmp2 = data.at(0);
-  tmp1 = "";
-
-  tmap[data.at(1)] = 1;
-  two_order_chain[std::make_pair(tmp1, tmp2)] = tmap;  // second element
-                                                       // non-full
-                                                       // like "", "__"
-  tmap.clear();
-
-  std::map<std::string, int>::iterator itb, ite;
-  for (i = 1; i < data.size(); ++i) {
-    tmp1 = tmp2;
-    tmp2 = data.at(i);
-
-    for (j = 0; j < data.size()-1; ++j) {
-      if ((data.at(j) == tmp1) && (data.at(j+1) == tmp2)) {
-        if ( j + 2 < data.size() )
-          tmap[data.at(j+2)]++;
-
-        else
-          tmap[""]++;
-      }
-    }
-
-    if (!two_order_chain.count(std::make_pair(tmp1, tmp2)))  // check, if we already count
-      two_order_chain[std::make_pair(tmp1, tmp2)] = tmap;
-
-    tmap.clear();
-  }
-}
-
-
+  
 void MarkovChain::generate() {
   std::map< std::pair<std::string, std::string>,
             std::map<std::string, int> > ::iterator itb = two_order_chain.begin(),
@@ -189,13 +169,39 @@ void MarkovChain::generate() {
   std::cout << std::endl;
 }
 
+void MarkovChain::predict() {
+  std::list<std::string> start_word;
+  start_word.resize(order, "");
+  
+  std::map<std::string, int> tmap;
+  std::map<std::string, int>::iterator itbt = tmap.begin(), itet = tmap.end();
+  std::list<std::string>::iterator itlb;
+
+  std::string next;
+  do {
+    tmap = norder_chain[start_word];
+    next = getNextWord(tmap); ;      
+    itlb = start_word.begin();       // left circle-shift for start_word list
+    ++itlb;                              
+    start_word.splice(itlb, start_word, start_word.end());
+    *(start_word.rbegin()) = next; 
+    
+    
+    std::cout <<  next  << std::endl;
+
+
+  } while(!next.empty());
+
+
+}
+
 
 std::string MarkovChain::getNextWord(std::map<std::string, int>& bag) {
   int sum = 0;  // sum all elements in map
   for (std::map<std::string, int>::iterator itb = bag.begin(), ite = bag.end(); itb != ite; ++itb )
     sum += itb->second;
 
-  std::map <std::string, double> normalize_values;  // normalized elements
+  std::map <std::string, double> normalize_values;  // normalized map
   for (std::map<std::string, int>::iterator itb = bag.begin(), ite = bag.end(); itb != ite; ++itb )
     normalize_values[itb->first] = (itb->second)/static_cast<double>(sum);
 
@@ -211,4 +217,13 @@ std::string MarkovChain::getNextWord(std::map<std::string, int>& bag) {
 
 
   return itbm->first;
+}
+
+
+void printList(std::list<std::string> &l) {
+  std::list<std::string>::iterator itb = l.begin(), ite = l.end();
+  for (;itb != ite; ++itb)
+    std::cout << "<" << *itb << "> ";
+
+  std::cout << std::endl;
 }
