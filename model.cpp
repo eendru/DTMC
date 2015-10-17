@@ -1,14 +1,15 @@
 #include "model.h"
 #include "serialize.pb.h"
 
-MarkovChain::MarkovChain( uint32_t exorder): order(exorder) {
+
+MarkovChain::MarkovChain(uint32_t exorder): order(exorder) {
   generator.seed(9);
 }
 
-void MarkovChain::set_order(uint32_t& exorder) {
+void MarkovChain::set_order(uint32_t exorder) {
   order = exorder;
 }
-void MarkovChain::set_filename(std::string& filename) {
+void MarkovChain::set_filename(std::string filename) {
   filename_ = filename;
 }
 
@@ -34,7 +35,7 @@ void MarkovChain::Read() {
     // convert to lower case
     std::transform(result.begin(), result.end(), result.begin(), ::tolower);  // it's not working with russian symbols
     if (!result.empty()) {
-      data.push_back(result);
+      data_.push_back(result);
       word_frequency[result]++;  // also count freq
     }
     result.clear();
@@ -50,7 +51,7 @@ void MarkovChain::PrintTable() {
   std::map<std::list<std::string>, std::map<std::string, int> >::iterator itb, ite;
 
   itb = norder_chain.begin();
-  ite = norder_chain.end(); 
+  ite = norder_chain.end();
 
   std::map<std::string, int>::iterator itmb, itme;
   std::list<std::string>::iterator itlb, itle;
@@ -60,9 +61,9 @@ void MarkovChain::PrintTable() {
     tmp = itb->first;
     itlb = tmp.begin();
     itle = tmp.end();
-  
+
     std::cout << "[";
-    for (; itlb != itle; ++itlb) 
+    for (; itlb != itle; ++itlb)
       std::cout << *itlb << ", ";
 
     std::cout << "] = {";
@@ -76,21 +77,18 @@ void MarkovChain::PrintTable() {
 
 
 void MarkovChain::Fit() {
-
-  if (!data.size())
+  if (!data_.size())
     throw "Empty data, can't build chain";
 
   std::list<std::string> last_n_strings;
-  std::list<std::string> data_strings;  // uses, when compare last_n_strings 
-                                        // and strings in data
+  std::list<std::string> data_strings;       // uses, when compare last_n_strings
+                                             // and strings in data
 
-  
-  last_n_strings.resize(order, "");         // list of empty strings (?)
+  last_n_strings.resize(order, "");          // list of empty strings (?)
   std::map<std::string, int> chain_key;
-  
-  
-  chain_key[data.at(0)] = 1;
-  norder_chain[last_n_strings] = chain_key; // first element
+
+  chain_key[data_.at(0)] = 1;
+  norder_chain[last_n_strings] = chain_key;  // first element
 
   chain_key.clear();
 
@@ -99,93 +97,86 @@ void MarkovChain::Fit() {
   std::list<std::string>::iterator itlb;
   std::vector<std::string>::iterator itc, itvcurrent;
 
-  for (i = 0; i < data.size(); ++i) {
-
+  for (i = 0; i < data_.size(); ++i) {
     itlb = last_n_strings.begin();       // left circle-shift for last_n_strings list
-    ++itlb;                              
+    ++itlb;
     last_n_strings.splice(itlb, last_n_strings, last_n_strings.end());
     
-    *(last_n_strings.rbegin()) = data.at(i); // last element must be update
+    *(last_n_strings.rbegin()) = data_.at(i);  // last element must be update
 
-    if (i < order-1)
-      chain_key[data.at(i+1)] = 1; // if it's first n=order elements
-                                   // first n=order elements are
-                                   // not complete
-
-    else {
+    if (i < order - 1) {
+      chain_key[data_.at(i+1)] = 1;  // if it's first n=order elements
+                                     // first n=order elements are
+                                     // not complete
+    } else {
     // under fill a tmp-list of words from data-vector, size of list = order
     // after that, compare this list and last_n_words list
     // if they are equal value of word in chain_map
-    // must be increment, id of this word 
+    // must be increment, id of this word
     // following the last element in tmp-list
-    // 
+    //
     // for example: last_n_strings = [another, sentence], order=2
     // data vector = [this, is, another, sentence, this, is, another, sentence]
     // current_position = data_vector.begin(), tmp_list=[this, is]
     // tmp-list and last_n_string are not equal
-    // 
+    //
     // After two iterations tmp-list would be [another, sentence]
     // tmp_list and last_n_strings are equal. => chain_key["this"]++
-
+    //
     // "this" is a next word in data-vector
     // Next two iterations, tmp_list wolud be also [another, sentence]
     // Next word for sentence is "" => chain_key[""]++
-    // 
+    //
     // As result for last_n_words = [another, sentence]
     // norder_chain[last_n_words] = {"this"->1, ""->1}
 
-      for (itc = data.begin(); itc != data.end() - order + 1; ++itc) {
+      for (itc = data_.begin(); itc != data_.end() - order + 1; ++itc) {
         itvcurrent = itc;  // from current position get n=order-elements
         for (k = 0; k < order; ++itvcurrent, ++k )
           data_strings.push_back(*itvcurrent);
-        
-        if(std::equal(data_strings.begin(), data_strings.end(), last_n_strings.begin()))
-          // if it's not last occurence
-          // else, need map empty string ""
-          // FIXME
-          if (std::distance(itc, data.end() - order) > 0)
+
+        if (std::equal(data_strings.begin(), data_strings.end(), last_n_strings.begin())) {
+          if (std::distance(itc, data_.end() - order) > 0)
             chain_key[*(itvcurrent)]++;
           else
             chain_key[""]++;
+        }
 
         data_strings.clear();
       }
     }
 
-    if(!norder_chain.count(last_n_strings))
+    if (!norder_chain.count(last_n_strings))
       norder_chain[last_n_strings] = chain_key;
 
     chain_key.clear();
   }
-
 }
 
-  
-void MarkovChain::Predict() {
+
+void MarkovChain::Predict(std::string init_passage, uint64_t K) {
+  std::vector<std::string> data2;  // read to tmp vector
+  std::ifstream input_file(init_passage.c_str());
+  std::copy(std::istream_iterator<std::string>(input_file), {}, back_inserter(data2));
+
+
   std::list<std::string> start_word;
   start_word.resize(order, "");
-  
+
   std::map<std::string, int> tmap;
   std::map<std::string, int>::iterator itbt = tmap.begin(), itet = tmap.end();
   std::list<std::string>::iterator itlb;
 
-  
-
   std::string next;
   do {
     tmap = norder_chain[start_word];
-    next = GetNextWord(tmap); ;      
+    next = GetNextWord(tmap);
     itlb = start_word.begin();       // left circle-shift for start_word list
-    ++itlb;                              
+    ++itlb;
     start_word.splice(itlb, start_word, start_word.end());
-    *(start_word.rbegin()) = next; 
+    *(start_word.rbegin()) = next;
     std::cout <<  next  << std::endl;
-
-  } while(!next.empty());
-
-
-
-
+  } while (!next.empty());
 }
 
 
@@ -215,7 +206,7 @@ std::string MarkovChain::GetNextWord(std::map<std::string, int>& bag) {
 
 void PrintList(std::list<std::string> &l) {
   std::list<std::string>::iterator itb = l.begin(), ite = l.end();
-  for (;itb != ite; ++itb)
+  for (; itb != ite; ++itb)
     std::cout << "<" << *itb << "> ";
 
   std::cout << std::endl;
@@ -223,20 +214,18 @@ void PrintList(std::list<std::string> &l) {
 
 
 
-bool MarkovChain::DumpToFile(std::string& filename) {
+bool MarkovChain::DumpToFile(std::string filename) {
   std::map<std::list<std::string>, std::map<std::string, int> > ::iterator itb = norder_chain.begin(),
                                                                            ite = norder_chain.end();
 
   std::fstream outfile(filename.c_str(), std::ios::out|std::ios::binary);
-  
+
   if (norder_chain.empty())
     return false;
 
-
-
   std::list<std::string> nwords_tmp;
   std::list<std::string>::iterator it_words_b, it_words_e;
-  
+
   std::map<std::string, int> markov_key_tmp;
   std::map<std::string, int>::iterator it_mkt_b, it_mkt_e;
 
@@ -258,7 +247,7 @@ bool MarkovChain::DumpToFile(std::string& filename) {
     it_words_e = nwords_tmp.end();
 
     tos_words = new mcserialize::LastNWords();
-    for (;it_words_b != it_words_e; ++it_words_b) 
+    for (; it_words_b != it_words_e; ++it_words_b)
       tos_words->add_word(*it_words_b);
 
     it_mkt_b = markov_key_tmp.begin();
@@ -274,19 +263,18 @@ bool MarkovChain::DumpToFile(std::string& filename) {
     tos_chain_entry = tos_norder_chain->add_entry();
     tos_chain_entry->set_allocated_word_frequency(tos_wf);
     tos_chain_entry->set_allocated_lastnwords(tos_words);
-    
   }
 
   tos_norder_chain->set_order(order);
   tos_norder_chain->SerializeToOstream(&outfile);
 
-  delete tos_norder_chain;  // other's allocated obj also will be destroyed 
+  delete tos_norder_chain;  // other's allocated obj also will be destroyed
 
   return true;
 }
 
 
-bool MarkovChain::LoadFromFile(std::string& filename) {
+bool MarkovChain::LoadFromFile(std::string filename) {
   std::ifstream input_binary(filename, std::ios::binary);
   // All variables which use in deserialize will be prefixed by des
   mcserialize::NOrderChain *des_norder_chain = new mcserialize::NOrderChain();
@@ -296,7 +284,7 @@ bool MarkovChain::LoadFromFile(std::string& filename) {
 
   norder_chain.clear();
   des_norder_chain->ParseFromIstream(&input_binary);
-  order = des_norder_chain->order(); 
+  order = des_norder_chain->order();
 
   if (!des_norder_chain->entry_size())
     return false;
@@ -307,7 +295,7 @@ bool MarkovChain::LoadFromFile(std::string& filename) {
 
 
   for (int i = 0; i < des_norder_chain->entry_size(); ++i) {
-    des_chain_entry = des_norder_chain->entry(i);    
+    des_chain_entry = des_norder_chain->entry(i);
 
     des_wordfreq = des_chain_entry.word_frequency();
     des_lastnwords = des_chain_entry.lastnwords();

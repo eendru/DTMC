@@ -1,23 +1,17 @@
 
 #include <iostream>
 #include <getopt.h>
+#include <string>
 #include "model.h"
-
-
 
 void help() {
   std::cout << " -f file with data for Markov Chain" << std::endl;
   std::cout << " -m file for store model" << std::endl;
   std::cout << " -n order of chain" << std::endl;
-
-
 }
 
-void run (std::string filename, int order, std::string output_model) {
-
-
+void run(std::string filename, int order, std::string output_model) {
   try {
-
     MarkovChain a(order);
     a.set_filename(filename);
     a.Read();
@@ -30,40 +24,34 @@ void run (std::string filename, int order, std::string output_model) {
   catch (std::exception &e) {
       std::cout << "Aborted: " << e.what() << std::endl;
   }
-
 }
 
 int main(int argc, char **argv) {
-
   std::string filename;
   std::string output_model;
   int order = 0;
 
-  if(argc < 3 ) {
+  if (argc < 3) {
     help();
     exit(-1);
-  }
-  else {
+  } else {
     int opt;
-    while((opt = getopt(argc, argv, "f:n:m:h")) != -1) {
-      switch(opt){
-        
+    while ((opt = getopt(argc, argv, "f:n:m:h")) != -1) {
+      switch (opt) {
         case 'f':
           filename = optarg;
           break;
 
         case 'n':
-          
-          try{
+          try {
             order = std::atoi(optarg);
-          }catch(...){
-              throw "Something bad with conversation from string to int for -n option" ; // pass to next catch
+          } catch(...) {
+              // pass to next catch
+              throw "Something bad with conversation from string to int for -n option";
           }
-
           break;
 
         case 'm':
-
           output_model = std::string(optarg);
           break;
 
@@ -77,18 +65,12 @@ int main(int argc, char **argv) {
       }
     }
   }
-
-
-  if(output_model.empty())
+  if (output_model.empty())
     output_model = std::string("out.bin");
 
   if (!filename.empty())
     run(filename, order, output_model);
-    
-  
 
   return 0;
 }
 
-
-//  add size type

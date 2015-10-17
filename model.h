@@ -3,9 +3,7 @@
 #include <fstream>
 #include <vector>
 #include <map>
-#include <string>
 #include <iostream>
-#include <fstream>
 #include <algorithm>
 #include <locale>
 #include <iterator>
@@ -17,36 +15,30 @@ using std::vector;
 
 
 class MarkovChain {
-
-public:
-
+ public:
   explicit MarkovChain(uint32_t exorder = 2);
   ~MarkovChain();
 
-  void set_order(uint32_t& exorder);
-  void set_filename(std::string& filename);
-  
+  void set_order(uint32_t exorder);
+  void set_filename(std::string filename);
+
   void Read();
   void Fit();
-  void Predict();
-  
-  void Generate();
+  void Predict(std::string init_passage, uint64_t K);
 
-  std::string GetNextWord( std::map<std::string, int>&);
+  std::string GetNextWord(std::map<std::string, int>&);
   void PrintTable();
 
-  bool DumpToFile(std::string &);
-  bool LoadFromFile(std::string &);
+  bool DumpToFile(std::string);
+  bool LoadFromFile(std::string);
 
-private:
-  
+ private:
   std::string filename_;
-  std::vector<std::string> data;
+  std::vector<std::string> data_;
   std::map<std::string, int> word_frequency;
   uint32_t order;
   std::map<std::list<std::string>, std::map<std::string, int> > norder_chain;
-  std::default_random_engine generator; // for uniform distribution
+  std::default_random_engine generator;   // for uniform distribution
 };
-
 
 void printList(std::list<std::string> &l);
