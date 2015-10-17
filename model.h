@@ -20,33 +20,31 @@ class MarkovChain {
 
 public:
 
-  MarkovChain(std::string exfilename = std::string("input.txt"), uint32_t exorder = 2);
+  explicit MarkovChain(uint32_t exorder = 2);
   ~MarkovChain();
 
-  void setOrder(uint32_t exorder);
+  void set_order(uint32_t& exorder);
+  void set_filename(std::string& filename);
+  
+  void Read();
+  void Fit();
+  void Predict();
+  
+  void Generate();
 
-  void read();
-  void fit();
-  void predict();
+  std::string GetNextWord( std::map<std::string, int>&);
+  void PrintTable();
 
-  void printTable();
-  void generate();
-
-  std::string getNextWord( std::map<std::string, int>&);
+  bool DumpToFile(std::string &);
+  bool LoadFromFile(std::string &);
 
 private:
-  std::string filename;
+  
+  std::string filename_;
   std::vector<std::string> data;
   std::map<std::string, int> word_frequency;
-
   uint32_t order;
-
   std::map<std::list<std::string>, std::map<std::string, int> > norder_chain;
-  
-  std::map< std::pair<std::string, std::string>, 
-            std::map<std::string, int> > 
-          two_order_chain;
-  
   std::default_random_engine generator; // for uniform distribution
 };
 

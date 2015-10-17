@@ -1,0 +1,27 @@
+package mcserialize;
+
+message LastNWords{
+  repeated string word = 1;
+}
+
+
+message WordFrequency{
+
+  message Entry {
+    required string key = 1;
+    required int64  val = 2;
+  }
+
+  repeated Entry entry = 1;
+}
+
+
+message Entry {
+  required LastNWords lastnwords = 1;
+  required WordFrequency word_frequency = 2;
+}
+
+message NOrderChain {
+  repeated Entry entry = 1;
+  required int32 order = 2;
+}
