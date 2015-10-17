@@ -69,10 +69,11 @@ void MarkovChain::PrintTable() {
 
     for (itmb = itb->second.begin(), itme = itb->second.end(); itmb != itme; ++itmb)
       std::cout  <<"\"" << itmb->first <<"\"" << "=" << itmb->second << ", ";
-  
+
     std::cout << "}" << std::endl;
   }
 }
+
 
 void MarkovChain::Fit() {
 
@@ -90,6 +91,7 @@ void MarkovChain::Fit() {
   
   chain_key[data.at(0)] = 1;
   norder_chain[last_n_strings] = chain_key; // first element
+
   chain_key.clear();
 
   uint64_t i = 0, j = 0, k = 0;
@@ -98,7 +100,7 @@ void MarkovChain::Fit() {
   std::vector<std::string>::iterator itc, itvcurrent;
 
   for (i = 0; i < data.size(); ++i) {
-    
+
     itlb = last_n_strings.begin();       // left circle-shift for last_n_strings list
     ++itlb;                              
     last_n_strings.splice(itlb, last_n_strings, last_n_strings.end());
@@ -124,6 +126,7 @@ void MarkovChain::Fit() {
     // 
     // After two iterations tmp-list would be [another, sentence]
     // tmp_list and last_n_strings are equal. => chain_key["this"]++
+
     // "this" is a next word in data-vector
     // Next two iterations, tmp_list wolud be also [another, sentence]
     // Next word for sentence is "" => chain_key[""]++
