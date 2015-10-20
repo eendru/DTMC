@@ -10,16 +10,16 @@ void help() {
   std::cout << "    -h see this help" << std::endl;
 }
 
-void run(std::string model, std::string init_passage, uint64_t K) {
+void run(std::string model, std::string init_passage_file, uint64_t K) {
   MarkovChain mc;
   mc.LoadFromFile(model);
-  mc.PrintTable();
-  mc.Predict(init_passage, K);
+  //mc.PrintTable();
+  mc.Predict(init_passage_file, K);
 }
 
 int main(int argc, char **argv) {
   std::string model;
-  std::string init_passage;
+  std::string init_passage_file;
   uint64_t K = 0;
 
   if (argc < 4) {
@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
     while ((opt = getopt(argc, argv, "f:m:K:h")) != -1) {
       switch (opt) {
         case 'f':
-          init_passage = std::string(optarg);
+          init_passage_file = std::string(optarg);
           break;
         case 'h':
           help();
@@ -49,7 +49,7 @@ int main(int argc, char **argv) {
     exit(-1);
   else {
     try {
-      run(model, init_passage, K);
+      run(model, init_passage_file, K);
     } catch(std::exception &e) {
         std::cout << "Aborted by exception: " << e.what() << std::endl;
     }
