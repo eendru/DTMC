@@ -13,8 +13,8 @@ void help() {
 void run(std::string model, std::string init_passage_file, uint64_t K) {
   MarkovChain mc;
   mc.LoadFromFile(model);
-  //mc.PrintTable();
   mc.Predict(init_passage_file, K);
+
 }
 
 int main(int argc, char **argv) {

@@ -1,60 +1,52 @@
-  #include "model.h"
+#include "model.h"
 #include "serialize.pb.h"
 
 
 MarkovChain::MarkovChain(uint32_t order): order_(order) {
-  generator.seed(9);
+  generator.seed(6);   // initial value for random engine
 }
 
 void MarkovChain::set_order(uint32_t order) {
   order_ = order;
 }
-uint32_t MarkovChain::  order() {
+
+uint32_t MarkovChain::order()const {
   return order_;
 }
 
 
-void MarkovChain::Read(std::string filename) {
-  std::vector<std::string> data2;  // read to tmp vector
- 
-  std::ifstream input_file(filename.c_str());
-  //input_file.exceptions (std::ifstream::failbit | std::ifstream::badbit );
 
-/*  try {
-    
-  } catch(...) {
-    std::cout << "File doesn't exist" << std::endl;
+void MarkovChain::Read(std::string filename) {
+  std::list<std::string> data2;  // read to tmp vector
+
+  std::ifstream input_file(filename.c_str());
+  if (!input_file.good()) {
+    std::cout << "Troubles with file, maybe file doesn't exist" << std::endl;
     throw;
   }
-*/ 
-  
- //  read data from file to data2 vector
+  //  read data from file to data2
   try {
     std::copy(std::istream_iterator<std::string>(input_file), {}, back_inserter(data2));
   } catch(...) {
     std::cout << "Something bad with copy data from file to vector" << std::endl;
-    throw;  
+    throw;
   }
-  
+
+  RemoveNumbers(data2);
+  ToLowerCase(data2);
+  RemovePunct(data2);
 
   std::string cleaned_word;
-  for (uint64_t i = 0; i < data2.size(); ++i) {
-    // punctuation mark can be without space after   << FIXME
-    // Remove all punct
-    data2.at(i).erase(std::remove_if(data2.at(i).begin(), data2.at(i).end(), &ispunct),
-                      data2.at(i).end() );
-    // Remove all numbers
-    data2.at(i).erase(std::remove_if(data2.at(i).begin(), data2.at(i).end(), &isdigit),
-                      data2.at(i).end() );
-
-    cleaned_word = data2.at(i);
+  std::list<std::string>::iterator itb = data2.begin(), ite = data2.end();
+  for (; itb != ite; ++itb) {
+    cleaned_word = *itb;
     // convert to lower case
-    std::transform(cleaned_word.begin(), cleaned_word.end(), cleaned_word.begin(), ::tolower);  // it's not working with russian symbols
-    if (!cleaned_word.empty()) {
+    if (!cleaned_word.empty())
       data_.push_back(cleaned_word);
-    }
+
     cleaned_word.clear();
   }
+  input_file.close();
 }
 
 
@@ -62,21 +54,21 @@ MarkovChain::~MarkovChain() {
 }
 
 
-void MarkovChain::PrintTable() {
-  std::map<std::list<std::string>, std::map<std::string, uint32_t> >::iterator itb, ite;
+void MarkovChain::PrintTable() const {
+  std::map<std::list<std::string>, std::map<std::string, uint32_t> >::const_iterator itb, ite;
 
-  itb = norder_chain.begin();
-  ite = norder_chain.end();
+  itb = norder_chain.cbegin();
+  ite = norder_chain.cend();
 
-  std::map<std::string, uint32_t>::iterator itmb, itme;
-  std::list<std::string>::iterator itlb, itle;
+  std::map<std::string, uint32_t>::const_iterator itmb, itme;
+  std::list<std::string>::const_iterator itlb, itle;
 
   std::list<std::string> tmp;
 
   for (; itb != ite; ++itb) {
     tmp = itb->first;
-    itlb = tmp.begin();
-    itle = tmp.end();
+    itlb = tmp.cbegin();
+    itle = tmp.cend();
 
     std::cout << "[";
     for (; itlb != itle; ++itlb)
@@ -84,7 +76,7 @@ void MarkovChain::PrintTable() {
 
     std::cout << "] = {";
 
-    for (itmb = itb->second.begin(), itme = itb->second.end(); itmb != itme; ++itmb)
+    for (itmb = itb->second.cbegin(), itme = itb->second.cend(); itmb != itme; ++itmb)
       std::cout  <<"\"" << itmb->first <<"\"" << "=" << itmb->second << ", ";
 
     std::cout << "}" << std::endl;
@@ -120,7 +112,7 @@ void MarkovChain::Fit() {
     itlb = last_n_strings.begin();       // left circle-shift for last_n_strings list
     ++itlb;
     last_n_strings.splice(itlb, last_n_strings, last_n_strings.end());
-    
+
     *(last_n_strings.rbegin()) = data_.at(i);  // last element must be update
 
     if (i < order_ - 1) {
@@ -173,14 +165,12 @@ void MarkovChain::Fit() {
 }
 
 
-void MarkovChain::Predict(std::string init_passage_filename, uint64_t K) {
-  std::vector<std::string> init_passage;  
-  std::ifstream input_file;
-  input_file.exceptions (std::ifstream::failbit | std::ifstream::badbit );
-  try {
-    input_file.open(init_passage_filename.c_str());
-  } catch(...) {
-    std::cout << "File doesn't exist" << std::endl;
+void MarkovChain::Predict(std::string init_passage_filename, uint64_t K)  {
+  std::vector<std::string> init_passage;
+  std::ifstream input_file(init_passage_filename.c_str());
+
+  if (!input_file.good()) {
+    std::cout << "Troubles with file, maybe file doesn't exist" << std::endl;
     throw;
   }
 
@@ -191,49 +181,42 @@ void MarkovChain::Predict(std::string init_passage_filename, uint64_t K) {
   if (!init_passage.empty())   // otherwise empty list will be used
     std::copy_n(init_passage.begin(), order_, start_word.begin());
 
+  // to lookup throw markov chain need cleaned lowercase text
+  RemovePunct(start_word);
+  RemoveNumbers(start_word);
+  ToLowerCase(start_word);
 
-  
+
   std::map<std::string, uint32_t> markov_chain_key;
   std::list<std::string>::iterator itlb;
-  std::string next;
-  
-  for (uint64_t i = 0; i < K; ++i) {
-    markov_chain_key = norder_chain[start_word];
-    next = GetNextWord(markov_chain_key);
-    
-    if (next.empty()) {
-      start_word.clear();
-      start_word.resize(order_, "");
-      std::cout << std::endl;
-    } else {
-      itlb = start_word.begin();       // left circle-shift for start_word list
-      ++itlb;
-      start_word.splice(itlb, start_word, start_word.end());
-      *(start_word.rbegin()) = next;
-      std::cout <<  next  << " ";
+  std::string next = "";
+
+  try {
+    for (uint64_t i = 0; i < K; ++i) {
+      markov_chain_key = norder_chain.at(start_word);
+      next = GetNextWord(markov_chain_key);
+      if (next.empty()) {
+        start_word.clear();
+        start_word.resize(order_, "");
+        std::cout << std::endl;
+      } else {
+        itlb = start_word.begin();       // left circle-shift for start_word list
+        ++itlb;
+        start_word.splice(itlb, start_word, start_word.end());
+        *(start_word.rbegin()) = next;
+        std::cout <<  next  << " ";
+      }
     }
+    std::cout << std::endl;
   }
-  std::cout << std::endl;
+  catch(std::out_of_range &e) {
+    std::cout << "It seems, that i can't find in transition table similar words" << std::endl;
+    throw;
+  }
 }
 
-uint64_t MarkovChain::SumOfMap(std::map<std::string, uint32_t>& input) {
-  uint64_t result = 0;
-  for (std::map<std::string, uint32_t>::iterator itb = input.begin(), ite = input.end(); itb != ite; ++itb )
-    result += itb->second;
-
-  return result;
-}
-
-std::map<std::string, double> MarkovChain::NormalizeMap(std::map<std::string, uint32_t> &input) {
-  uint64_t sum = SumOfMap(input);
-  std::map <std::string, double> normalize_values;  // normalized map
-  for (std::map<std::string, uint32_t>::iterator itb = input.begin(), ite = input.end(); itb != ite; ++itb )
-    normalize_values[itb->first] = (itb->second)/static_cast<double>(sum);
-
-  return normalize_values;
-}
 std::string MarkovChain::GetNextWord(std::map<std::string, uint32_t>& bag) {
-  uint64_t sum = 0; 
+  uint64_t sum = 0;
   std::map <std::string, double> normalize_values = NormalizeMap(bag);
 
   std::uniform_real_distribution<double> distribution(0, 1);
@@ -243,7 +226,7 @@ std::string MarkovChain::GetNextWord(std::map<std::string, uint32_t>& bag) {
   do {
     random_value -= itb_nv->second;
     if (random_value > 0.0)
-      ++itb_nv;    
+      ++itb_nv;
   } while (random_value > 0.0);
 
   return itb_nv->first;
@@ -305,6 +288,7 @@ bool MarkovChain::DumpToFile(std::string filename) {
 
   delete tos_norder_chain;  // other's allocated obj also will be destroyed
 
+  outfile.close();
   return true;
 }
 
@@ -347,7 +331,41 @@ bool MarkovChain::LoadFromFile(std::string filename) {
     mc_value_tmp.clear();
   }
 
+  input_binary.close();
   return true;
 }
 
 
+void RemoveNumbers(std::list<std::string>& input) {
+  std::list<std::string>::iterator itb = input.begin(), ite = input.end();
+  for (; itb != ite; ++itb)
+    itb->erase(std::remove_if(itb->begin(), itb->end(), isdigit), itb->end());
+}
+
+void RemovePunct(std::list<std::string>& input) {
+  std::list<std::string>::iterator itb = input.begin(), ite = input.end();
+  for (; itb != ite; ++itb)
+    itb->erase(std::remove_if(itb->begin(), itb->end(), ispunct), itb->end());
+}
+
+void ToLowerCase(std::list<std::string>& input) {
+  std::list<std::string>::iterator itb = input.begin(), ite = input.end();
+  for (; itb != ite; ++itb)
+    std::transform(itb->begin(), itb->end(), itb->begin(), ::tolower);
+}
+
+uint64_t SumOfMap(std::map<std::string, uint32_t>& input) {
+  uint64_t result = 0;
+  for (std::map<std::string, uint32_t>::const_iterator itb = input.cbegin(), ite = input.cend(); itb != ite; ++itb )
+    result += itb->second;
+  return result;
+}
+
+std::map<std::string, double> NormalizeMap(std::map<std::string, uint32_t> &input) {
+  uint64_t sum = SumOfMap(input);
+  std::map <std::string, double> normalize_values;  // normalized map
+  for (std::map<std::string, uint32_t>::const_iterator itb = input.cbegin(), ite = input.cend(); itb != ite; ++itb )
+    normalize_values[itb->first] = (itb->second)/static_cast<double>(sum);
+
+  return normalize_values;
+}

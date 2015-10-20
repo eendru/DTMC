@@ -12,15 +12,12 @@ void help() {
 
 void run(std::string filename, int order, std::string output_model) {
   try {
-    
-    MarkovChain a(order);
-    
-    a.Read(filename);
+    MarkovChain a(order);    
+    a.Read(filename); 
     a.Fit();
 
     if (!a.DumpToFile(output_model))
       std::cout << "Empty chain" << std::endl;
-    //a.PrintTable();
   }
   catch (std::exception &e) {
       std::cout << "Aborted: " << e.what() << std::endl;
@@ -45,15 +42,17 @@ int main(int argc, char **argv) {
             filename = std::string(optarg);
           } catch(const char *){
               std::cout << "Select filename with data" << std::endl;
+              throw;
             }
           break;
       
-
         case 'n':
           try {
             order = std::atoi(optarg);
+            if (order <= 0)
+              throw;
           } catch(...) {
-              std::cout << "Something bad with conversation from string to int for -n option" << std::endl;
+              std::cout << "Something bad with conversation from string to unsigned int for -n option" << std::endl;
           }
           break;
 
