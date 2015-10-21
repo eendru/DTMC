@@ -94,7 +94,7 @@ void MarkovChain::Fit() {
   std::list<std::string> data_strings;       // uses, when compare last_n_strings
                                              // and strings in data
 
-  last_n_strings.resize(order_, "");          // list of empty strings (?)
+  last_n_strings.resize(order_, "");          // list of empty strings 
   std::map<std::string, uint32_t> chain_key;
 
   // create first element
@@ -104,7 +104,6 @@ void MarkovChain::Fit() {
   chain_key.clear();
 
   uint64_t i = 0, j = 0, k = 0;
-
   std::list<std::string>::iterator itlb;
   std::vector<std::string>::iterator itc, itvcurrent;
 

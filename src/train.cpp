@@ -20,7 +20,7 @@ void run(std::string filename, int order, std::string output_model) {
       std::cout << "Empty chain" << std::endl;
   }
   catch (std::exception &e) {
-      std::cout << "Aborted: " << e.what() << std::endl;
+      std::cout << "Aborted by exception: " << e.what() << std::endl;
   }
 }
 

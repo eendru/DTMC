@@ -45,14 +45,14 @@ int main(int argc, char **argv) {
     }
   }
 
-  if (model.empty() || K == 0)
-    exit(-1);
-  else {
-    try {
-      run(model, init_passage_file, K);
-    } catch(std::exception &e) {
-        std::cout << "Aborted by exception: " << e.what() << std::endl;
-    }
+  if (model.empty() || K == 0) {
+    exit(-1); 
+  } else {
+      try {
+        run(model, init_passage_file, K);
+      } catch(std::exception &e) {
+          std::cout << "Aborted by exception: " << e.what() << std::endl;
+      }
   }
   return 0;
 }

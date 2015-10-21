@@ -22,14 +22,14 @@ class MarkovChain {
   explicit MarkovChain(uint32_t order = 2);
   ~MarkovChain();
 
-  void set_order(uint32_t order) ;
+  void set_order(uint32_t order);
   uint32_t order() const;
 
   /*!
    * Read file in ASCII encode and store it in std::vector<std::string> data_
    * @param std::string  filename
    */
-  void Read(std::string );
+  void Read(std::string);
 
   /*!
    * Buld n-order markov chain
@@ -64,10 +64,7 @@ class MarkovChain {
   bool LoadFromFile(const std::string filename);
 
  private:
-  
   std::string GetNextWord(std::map<std::string, uint32_t>&);
-
-
 
   std::vector<std::string> data_;
   uint32_t order_;
@@ -78,7 +75,7 @@ class MarkovChain {
 };
 
 std::map<std::string, double> NormalizeMap(std::map<std::string, uint32_t> &input);
-uint64_t SumOfMap(std::map<std::string, uint32_t>& input) ;
+uint64_t SumOfMap(std::map<std::string, uint32_t>& input);
 
 void RemoveNumbers(std::list<std::string> &);
 void RemovePunct(std::list<std::string> &);
