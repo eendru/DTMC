@@ -40,10 +40,8 @@ void MarkovChain::Read(std::string filename) {
   std::list<std::string>::iterator itb = data2.begin(), ite = data2.end();
   for (; itb != ite; ++itb) {
     cleaned_word = *itb;
-    // convert to lower case
     if (!cleaned_word.empty())
       data_.push_back(cleaned_word);
-
     cleaned_word.clear();
   }
   input_file.close();
@@ -233,8 +231,8 @@ std::string MarkovChain::GetNextWord(std::map<std::string, uint32_t>& bag) {
 
 
 bool MarkovChain::DumpToFile(std::string filename) {
-  std::map<std::list<std::string>, std::map<std::string, uint32_t> > ::iterator itb = norder_chain.begin(),
-                                                                           ite = norder_chain.end();
+  std::map<std::list<std::string>, std::map<std::string, uint32_t> >::iterator itb = norder_chain.begin(),
+                                                                                ite = norder_chain.end();
 
   std::fstream outfile(filename.c_str(), std::ios::out|std::ios::binary);
 
@@ -284,10 +282,10 @@ bool MarkovChain::DumpToFile(std::string filename) {
 
   tos_norder_chain->set_order(order_);
   tos_norder_chain->SerializeToOstream(&outfile);
+  outfile.close();
 
   delete tos_norder_chain;  // other's allocated obj also will be destroyed
 
-  outfile.close();
   return true;
 }
 
@@ -310,7 +308,6 @@ bool MarkovChain::LoadFromFile(std::string filename) {
   mcserialize::Entry des_chain_entry;
   mcserialize::LastNWords des_lastnwords;
   mcserialize::WordFrequency des_wordfreq;
-
 
   for (int i = 0; i < des_norder_chain->entry_size(); ++i) {
     des_chain_entry = des_norder_chain->entry(i);

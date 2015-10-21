@@ -1,0 +1,2 @@
+./markov_chain_train -f input.txt -m model.bin -n 3 
+./markov_chain_predict -f init.txt -m model.bin -K 200
