@@ -4,7 +4,7 @@
 ### What is this repository for? ###
 
 * n-order Markov chain generator
-* 0.9
+* 1.0
 
 ### How do I get set up? ###
 
