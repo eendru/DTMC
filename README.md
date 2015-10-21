@@ -9,7 +9,7 @@
 ### How do I get set up? ###
 
 * cd src && make
-* protobuf
+* need protobuf library for (de)serialize
 
 ### Who do I talk to? ###
 
