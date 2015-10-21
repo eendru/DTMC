@@ -37,23 +37,11 @@ int main(int argc, char **argv) {
     while ((opt = getopt(argc, argv, "f:n:m:h")) != -1) {
       switch (opt) {
         case 'f':
-          try{
-            //
-            filename = std::string(optarg);
-          } catch(const char *){
-              std::cout << "Select filename with data" << std::endl;
-              throw;
-            }
+          filename = std::string(optarg);
           break;
       
         case 'n':
-          try {
-            order = std::atoi(optarg);
-            if (order <= 0)
-              throw;
-          } catch(...) {
-              std::cout << "Something bad with conversation from string to unsigned int for -n option" << std::endl;
-          }
+          order = std::atoi(optarg);
           break;
 
         case 'm':
@@ -74,7 +62,12 @@ int main(int argc, char **argv) {
     output_model = std::string("out.bin");
 
   if (!filename.empty())
-    run(filename, order, output_model);
+    if (order > 0)
+      run(filename, order, output_model);
+    else {
+      std::cout << "Order can't be < 1" << std::endl;
+      exit(-1);
+    }
 
   return 0;
 }

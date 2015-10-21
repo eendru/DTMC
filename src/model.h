@@ -9,9 +9,6 @@
 #include <iterator>
 #include <iomanip>
 
-using std::string;
-using std::vector;
-
 
 /*!
  * @brief MarkovChain class provides the creation of Markov Chain and 
