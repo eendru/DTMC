@@ -1,2 +1,0 @@
-./markov_chain_train -f input2.txt -m out.bin -n 4
-./markov_chain_predict -m out.bin -f input2.txt -K 4
