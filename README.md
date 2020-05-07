@@ -12,5 +12,4 @@
 * need protobuf library for (de)serialize
 
 ### Who do I talk to? ###
-
-* pandreym@gmail.com
+->ISSUES
